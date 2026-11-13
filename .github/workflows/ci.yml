@@ -1,0 +1,43 @@
+name: CI - calidad de datos de ventas
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      archivo:
+        description: "CSV a validar"
+        required: false
+        default: "data/ventas.csv"
+
+jobs:
+  pruebas:
+    name: 1. Pruebas de código (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Ejecutar pruebas
+        run: pytest -v
+
+  validar-datos:
+    name: 2. Validar ventas.csv (bloquea la carga)
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      - name: Validar datos
+        run: python validar_ventas.py "${{ github.event.inputs.archivo || 'data/ventas.csv' }}"
+      - name: Cargar al data warehouse (simulado)
+        run: echo "Validación aprobada; el orquestador puede cargar los datos al warehouse."
